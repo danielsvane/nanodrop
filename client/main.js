@@ -67,9 +67,9 @@ Meteor.startup(function(){
 
   Tracker.autorun(function(){
     let samples = Samples.find().fetch();
-    let names = _.map(samples, "name");
-    let concentrations = _.map(samples, "mean");
-    let deviations = _.map(samples, "deviation");
+    let names = _.map(samples, "name").reverse();
+    let concentrations = _.map(samples, "mean").reverse();
+    let deviations = _.map(samples, "deviation").reverse();
 
     let data = [{
       type: 'bar',
@@ -80,8 +80,7 @@ Meteor.startup(function(){
         type: "data",
         array: deviations,
         visible: true
-      },
-      mode: "markers+text"
+      }
     }];
 
     let layout = {
@@ -93,12 +92,16 @@ Meteor.startup(function(){
 
     for( let i = 0 ; i < samples.length; i++ ){
       let result = {
-        x: concentrations[i]+deviations[i],
+        x: 0.01,
         y: names[i],
         text: d3.format(".4s")(concentrations[i])+"±"+d3.format(".4s")(deviations[i]),
         xanchor: 'left',
         yanchor: 'center',
-        showarrow: false
+        xref: "paper",
+        showarrow: false,
+        font: {
+          color: "#fff"
+        }
       };
       layout.annotations.push(result);
     }
@@ -126,9 +129,14 @@ function download(filename, text, dataType="text/plain") {
 
 function calculateLegendMargins(containingElement){
   var legendBB = $(containingElement).find(".yaxislayer")[0].getBBox();
+  var legendYY = $(containingElement).find(".xaxislayer")[0].getBBox();
 
-  var margin = {};
-  margin.l = legendBB.width+80;
+  var margin = {
+    t: 30,
+    r: 30
+  };
+  margin.l = legendBB.width+30;
+  margin.b = legendYY.height+30;
   return margin;
 }
 
