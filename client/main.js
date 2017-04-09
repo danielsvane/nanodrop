@@ -71,6 +71,8 @@ Meteor.startup(function(){
     let concentrations = _.map(samples, "mean").reverse();
     let deviations = _.map(samples, "deviation").reverse();
 
+    $("#tester").height(samples.length*50);
+
     let data = [{
       type: 'bar',
       x: concentrations,
