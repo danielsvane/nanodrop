@@ -44,6 +44,9 @@ Template.graph.events({
       csv += sample.name+","+sample.mean+","+sample.deviation+"\n";
     });
     download("data.csv", csv);
+  },
+  "click #download-svg": function(){
+    download("data.svg", $(".main-svg")[0].outerHTML.slice(0, -6)+$(".main-svg")[1].innerHTML+"</svg>");
   }
 })
 
@@ -111,9 +114,9 @@ Meteor.startup(function(){
 
 });
 
-function download(filename, text) {
+function download(filename, text, dataType="text/plain") {
   var element = document.createElement('a');
-  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+  element.setAttribute('href', 'data:'+dataType+';charset=utf-8,' + encodeURIComponent(text));
   element.setAttribute('download', filename);
   element.style.display = 'none';
   document.body.appendChild(element);
