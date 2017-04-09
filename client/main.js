@@ -37,6 +37,13 @@ Template.graph.events({
         deviation: deviation
       }
     })
+  },
+  "click #download-csv": function(){
+    let csv = "Sample,Concentration,Deviation\n";
+    Samples.find().forEach(function(sample){
+      csv += sample.name+","+sample.mean+","+sample.deviation+"\n";
+    });
+    download("data.csv", csv);
   }
 })
 
@@ -103,6 +110,16 @@ Meteor.startup(function(){
 
 
 });
+
+function download(filename, text) {
+  var element = document.createElement('a');
+  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+  element.setAttribute('download', filename);
+  element.style.display = 'none';
+  document.body.appendChild(element);
+  element.click();
+  document.body.removeChild(element);
+}
 
 function calculateLegendMargins(containingElement){
   var legendBB = $(containingElement).find(".yaxislayer")[0].getBBox();

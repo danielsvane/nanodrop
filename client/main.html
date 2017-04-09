@@ -7,12 +7,17 @@
 
 <body>
   <div class="container">
-    {{> graph}}
+    <div class="row">
+      {{> graph}}
+    </div>
   </div>
 </body>
 
 <template name="graph">
-  <input type="file" id="input">
+  <label class="btn btn-default btn-file">
+      Select file <input type="file" style="display:none;">
+  </label>
+  <div id="download-csv" class="btn btn-primary">Download CSV</div>
   <table id="results" class="table">
     <thead>
       <tr>
