@@ -17,26 +17,32 @@ Template.graph.helpers({
   }
 });
 
+function calculateConcentration(name, absorbance, extcoeff){
+  let concentration = [];
+  for(let i=0; i<absorbance.length; i++){
+    concentration.push(absorbance[i]/extcoeff);
+  }
+  let mean = math.mean(concentration);
+  let deviation = math.std(concentration);
+
+  Samples.update({
+    name: name
+  }, {
+    $set: {
+      extcoeff: extcoeff,
+      mean: mean,
+      deviation: deviation
+    }
+  });
+}
+
 Template.graph.events({
   "focusout .extcoeff": function(event){
-    console.log(event.currentTarget.value);
-
     let extcoeff = parseFloat(event.currentTarget.value);
+    let absorbance = this.absorbance;
+    let name = this.name;
 
-    let concentration = [];
-    for(let i=0; i<this.absorbance.length; i++){
-      concentration.push(this.absorbance[i]/extcoeff);
-    }
-    let mean = math.mean(concentration);
-    let deviation = math.std(concentration);
-
-    Samples.update(this._id, {
-      $set: {
-        extcoeff: extcoeff,
-        mean: mean,
-        deviation: deviation
-      }
-    })
+    calculateConcentration(name, absorbance, extcoeff);
   },
   "click #download-csv": function(){
     let csv = "Sample,Concentration,Deviation\n";
@@ -47,14 +53,9 @@ Template.graph.events({
   },
   "click #download-svg": function(){
     download("data.svg", $(".main-svg")[0].outerHTML.slice(0, -6)+$(".main-svg")[1].innerHTML+"</svg>");
-  }
-})
-
-Meteor.startup(function(){
-
-  $('input[type=file]').on("change", function(){
-
-    $('input[type=file]').parse({
+  },
+  "change #nanodrop-file": function(){
+    $('#nanodrop-file').parse({
     	config: {
         dynamicTyping: true,
     		complete: function(results, file){
@@ -62,8 +63,35 @@ Meteor.startup(function(){
         }
     	}
     });
+  },
+  "change #extcoeff-file": function(){
+    $('#extcoeff-file').parse({
+      config: {
+        dynamicTyping: true,
+        complete: function(results, file){
+          handleExtCoeff(results);
+        }
+      }
+    });
+    $("#extcoeff-file").val("");
+  }
+})
 
-  })
+function handleExtCoeff(results){
+  for(let n=1, len = results.data.length-1; n<len; n++){
+    let result = results.data[n];
+    let name = result[0];
+    let extcoeff = result[1];
+    let sample = Samples.findOne({
+      name: name
+    });
+    if(sample){
+      calculateConcentration(name, sample.absorbance, extcoeff);
+    }
+  }
+}
+
+Meteor.startup(function(){
 
   Tracker.autorun(function(){
     let samples = Samples.find().fetch();

@@ -19,7 +19,10 @@
 
 <template name="graph">
   <label class="btn btn-default btn-file">
-      Select file <input type="file" style="display:none;">
+      Select nanodrop file <input id="nanodrop-file" type="file" style="display:none;">
+  </label>
+  <label class="btn btn-default btn-file">
+      Select ext. coeff. file <input id="extcoeff-file" type="file" style="display:none;">
   </label>
   <div id="download-csv" class="btn btn-primary">Download CSV</div>
   <div id="download-svg" class="btn btn-primary">Download SVG</div>
@@ -38,7 +41,7 @@
         <tr>
           <td>{{name}}</td>
           <td>{{absorbance}}</td>
-          <td><input class="extcoeff" type="text"></td>
+          <td><input class="extcoeff" type="text" value="{{extcoeff}}"></td>
           <td>{{format mean}}</td>
           <td>{{format deviation}}</td>
         </tr>
