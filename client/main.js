@@ -6,7 +6,7 @@ Samples = new Mongo.Collection(null);
 
 let d3 = Plotly.d3;
 
-Template.graph.helpers({
+Template.main.helpers({
   samples: function(){
     return Samples.find();
   },
@@ -36,7 +36,7 @@ function calculateConcentration(name, absorbance, extcoeff){
   });
 }
 
-Template.graph.events({
+Template.main.events({
   "focusout .extcoeff": function(event){
     let extcoeff = parseFloat(event.currentTarget.value);
     let absorbance = this.absorbance;
@@ -91,61 +91,70 @@ function handleExtCoeff(results){
   }
 }
 
-Meteor.startup(function(){
-
+Template.graph.onRendered(function(){
   Tracker.autorun(function(){
-    let samples = Samples.find().fetch();
-    let names = _.map(samples, "name").reverse();
-    let concentrations = _.map(samples, "mean").reverse();
-    let deviations = _.map(samples, "deviation").reverse();
-
-    $("#tester").height(samples.length*50);
-
-    let data = [{
-      type: 'bar',
-      x: concentrations,
-      y: names,
-      orientation: 'h',
-      error_x: {
-        type: "data",
-        array: deviations,
-        visible: true
+    let samples = Samples.find({
+      extcoeff: {
+        $exists: true
       }
-    }];
+    }).fetch();
 
-    let layout = {
-      annotations: [],
-      xaxis: {
-        title: "Concentration [M]"
-      }
-    };
-
-    for( let i = 0 ; i < samples.length; i++ ){
-      let result = {
-        x: 0.01,
-        y: names[i],
-        text: d3.format(".4s")(concentrations[i])+"±"+d3.format(".4s")(deviations[i]),
-        xanchor: 'left',
-        yanchor: 'center',
-        xref: "paper",
-        showarrow: false,
-        font: {
-          color: "#fff"
-        }
-      };
-      layout.annotations.push(result);
+    if(samples.length){
+      renderGraph(samples);
     }
 
-
-    let targetDiv = document.getElementById('tester')
-    Plotly.newPlot(targetDiv, data, layout).then( function() {
-      layout.margin = calculateLegendMargins(targetDiv);
-      Plotly.relayout(targetDiv,layout);
-    });
   });
-
-
 });
+
+function renderGraph(samples){
+  let names = _.map(samples, "name").reverse();
+  let concentrations = _.map(samples, "mean").reverse();
+  let deviations = _.map(samples, "deviation").reverse();
+
+  $("#graph").height(samples.length*40+85);
+
+  let data = [{
+    type: 'bar',
+    x: concentrations,
+    y: names,
+    orientation: 'h',
+    error_x: {
+      type: "data",
+      array: deviations,
+      visible: true
+    }
+  }];
+
+  let layout = {
+    annotations: [],
+    xaxis: {
+      title: "Concentration [M]"
+    }
+  };
+
+  for( let i = 0 ; i < samples.length; i++ ){
+    let result = {
+      x: 0.01,
+      y: names[i],
+      text: d3.format(".4s")(concentrations[i])+"±"+d3.format(".4s")(deviations[i]),
+      xanchor: 'left',
+      yanchor: 'center',
+      xref: "paper",
+      showarrow: false,
+      font: {
+        color: "#fff"
+      }
+    };
+    layout.annotations.push(result);
+  }
+
+
+  let targetDiv = document.getElementById('graph')
+  Plotly.newPlot(targetDiv, data, layout).then( function() {
+    layout.margin = calculateLegendMargins(targetDiv);
+    Plotly.relayout(targetDiv,layout);
+  });
+}
 
 function download(filename, text, dataType="text/plain") {
   var element = document.createElement('a');

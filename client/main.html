@@ -12,41 +12,49 @@
       <p>Takes a .csv from nanodrop and the extinction coefficients, and calculates the concentrations with standard deviations. An arbitrary number of measurements of each sample is supported. The data is plotted using <a href="https://plot.ly/">plotly</a>, and the source code can be found <a href="https://github.com/danielsvane/nanodrop">here</a>.</p>
     </div>
     <div class="row">
-      {{> graph}}
+      {{> main}}
     </div>
   </div>
 </body>
 
-<template name="graph">
+<template name="main">
   <label class="btn btn-default btn-file">
       Select nanodrop file <input id="nanodrop-file" type="file" style="display:none;">
   </label>
-  <label class="btn btn-default btn-file">
-      Select ext. coeff. file <input id="extcoeff-file" type="file" style="display:none;">
-  </label>
-  <div id="download-csv" class="btn btn-primary">Download CSV</div>
-  <div id="download-svg" class="btn btn-primary">Download SVG</div>
-  <table id="results" class="table">
-    <thead>
-      <tr>
-        <th>Sample</th>
-        <th>Absorbance</th>
-        <th>Ext. coeff. [L mol-1 cm-1]</th>
-        <th>Concentration [M]</th>
-        <th>Deviation [M]</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{#each samples}}
+  {{#if samples.count}}
+    <label class="btn btn-default btn-file">
+        Select ext. coeff. file <input id="extcoeff-file" type="file" style="display:none;">
+    </label>
+    <div id="download-csv" class="btn btn-primary">Download CSV</div>
+    <div id="download-svg" class="btn btn-primary">Download SVG</div>
+    <table id="results" class="table">
+      <thead>
         <tr>
-          <td>{{name}}</td>
-          <td>{{absorbance}}</td>
-          <td><input class="extcoeff" type="text" value="{{extcoeff}}"></td>
-          <td>{{format mean}}</td>
-          <td>{{format deviation}}</td>
+          <th>Sample</th>
+          <th>Absorbance</th>
+          <th>Ext. coeff. [L mol-1 cm-1]</th>
+          <th>Concentration [M]</th>
+          <th>Deviation [M]</th>
         </tr>
-      {{/each}}
-    </tbody>
-  </table>
-  <div id="tester"></div>
+      </thead>
+      <tbody>
+        {{#each samples}}
+          <tr>
+            <td>{{name}}</td>
+            <td>{{absorbance}}</td>
+            <td><input class="extcoeff" type="text" value="{{extcoeff}}"></td>
+            <td>{{format mean}}</td>
+            <td>{{format deviation}}</td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+
+    {{> graph}}
+
+  {{/if}}
+</template>
+
+<template name="graph">
+  <div id="graph"></div>
 </template>
