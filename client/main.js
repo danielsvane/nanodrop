@@ -11,30 +11,20 @@ Template.main.helpers({
     return Samples.find();
   },
   format: function(value){
-    return math.format(value, {
-      notation: "engineering"
-    })
+    if(value) {
+      return math.format(value, {
+        notation: "engineering"
+      });
+    }
+  },
+  samplesWithExtcoeff: function(){
+    let samples = Samples.find({
+      extcoeff: {
+        $exists: true
+      }
+    }).count();
   }
 });
-
-function calculateConcentration(name, absorbance, extcoeff){
-  let concentration = [];
-  for(let i=0; i<absorbance.length; i++){
-    concentration.push(absorbance[i]/extcoeff);
-  }
-  let mean = math.mean(concentration);
-  let deviation = math.std(concentration);
-
-  Samples.update({
-    name: name
-  }, {
-    $set: {
-      extcoeff: extcoeff,
-      mean: mean,
-      deviation: deviation
-    }
-  });
-}
 
 Template.main.events({
   "focusout .extcoeff": function(event){
@@ -74,8 +64,40 @@ Template.main.events({
       }
     });
     $("#extcoeff-file").val("");
+  },
+  "click .delete": function(){
+    Samples.remove(this._id);
   }
 })
+
+Template.graph.onRendered(function(){
+  $(window).resize(function(){
+    renderGraph();
+  });
+
+  Tracker.autorun(function(){
+    renderGraph();
+  });
+});
+
+function calculateConcentration(name, absorbance, extcoeff){
+  let concentration = [];
+  for(let i=0; i<absorbance.length; i++){
+    concentration.push(absorbance[i]/extcoeff);
+  }
+  let mean = math.mean(concentration);
+  let deviation = math.std(concentration);
+
+  Samples.update({
+    name: name
+  }, {
+    $set: {
+      extcoeff: extcoeff,
+      mean: mean,
+      deviation: deviation
+    }
+  });
+}
 
 function handleExtCoeff(results){
   for(let n=1, len = results.data.length-1; n<len; n++){
@@ -91,69 +113,62 @@ function handleExtCoeff(results){
   }
 }
 
-Template.graph.onRendered(function(){
-  Tracker.autorun(function(){
-    let samples = Samples.find({
-      extcoeff: {
-        $exists: true
+function renderGraph(){
+  let samples = Samples.find({
+    extcoeff: {
+      $exists: true
+    }
+  }).fetch();
+
+  if(samples.length){
+    let names = _.map(samples, "name").reverse();
+    let concentrations = _.map(samples, "mean").reverse();
+    let deviations = _.map(samples, "deviation").reverse();
+
+    $("#graph").height(samples.length*40+85);
+
+    let data = [{
+      type: 'bar',
+      x: concentrations,
+      y: names,
+      orientation: 'h',
+      error_x: {
+        type: "data",
+        array: deviations,
+        visible: true
       }
-    }).fetch();
+    }];
 
-    if(samples.length){
-      renderGraph(samples);
-    }
-
-  });
-});
-
-function renderGraph(samples){
-  let names = _.map(samples, "name").reverse();
-  let concentrations = _.map(samples, "mean").reverse();
-  let deviations = _.map(samples, "deviation").reverse();
-
-  $("#graph").height(samples.length*40+85);
-
-  let data = [{
-    type: 'bar',
-    x: concentrations,
-    y: names,
-    orientation: 'h',
-    error_x: {
-      type: "data",
-      array: deviations,
-      visible: true
-    }
-  }];
-
-  let layout = {
-    annotations: [],
-    xaxis: {
-      title: "Concentration [M]"
-    }
-  };
-
-  for( let i = 0 ; i < samples.length; i++ ){
-    let result = {
-      x: 0.01,
-      y: names[i],
-      text: d3.format(".4s")(concentrations[i])+"±"+d3.format(".4s")(deviations[i]),
-      xanchor: 'left',
-      yanchor: 'center',
-      xref: "paper",
-      showarrow: false,
-      font: {
-        color: "#fff"
+    let layout = {
+      annotations: [],
+      xaxis: {
+        title: "Concentration [M]"
       }
     };
-    layout.annotations.push(result);
+
+    for( let i = 0 ; i < samples.length; i++ ){
+      let result = {
+        x: 0.01,
+        y: names[i],
+        text: d3.format(".4s")(concentrations[i])+"±"+d3.format(".4s")(deviations[i]),
+        xanchor: 'left',
+        yanchor: 'center',
+        xref: "paper",
+        showarrow: false,
+        font: {
+          color: "#fff"
+        }
+      };
+      layout.annotations.push(result);
+    }
+
+    let targetDiv = document.getElementById('graph')
+    Plotly.newPlot(targetDiv, data, layout).then( function() {
+      layout.margin = calculateLegendMargins(targetDiv);
+      Plotly.relayout(targetDiv,layout);
+    });
   }
 
-
-  let targetDiv = document.getElementById('graph')
-  Plotly.newPlot(targetDiv, data, layout).then( function() {
-    layout.margin = calculateLegendMargins(targetDiv);
-    Plotly.relayout(targetDiv,layout);
-  });
 }
 
 function download(filename, text, dataType="text/plain") {
