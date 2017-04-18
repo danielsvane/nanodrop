@@ -23,6 +23,7 @@ Template.main.helpers({
         $exists: true
       }
     }).count();
+    return samples;
   }
 });
 
